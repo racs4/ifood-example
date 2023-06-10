@@ -130,7 +130,6 @@ export class CustomerController {
   @Roles(UserRole.CUSTOMER)
   @Delete('address/:id')
   deleteAddress(@Param('id') id: string, @Request() req) {
-    console.log(id);
     if (req.user && req.user.user_id) {
       return this.customerService.removeAddresses(req.user.user_id, id);
     } else {
