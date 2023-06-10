@@ -1,0 +1,30 @@
+version: '3.9'
+services:
+  mongo:
+    container_name: mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - './data:/data/db'
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DB_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD}
+      - MONGO_INITDB_DATABASE=${DB_NAME}
+    image: mongo:6.0.3 # latest available
+    networks:
+      - network_cable
+  application:
+    build: .
+    ports:
+      - '${PORT}:${PORT}'
+    links:
+      - mongo
+    networks:
+      - network_cable
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT}
+      - DATABASE_URL=mongodb://${DB_USERNAME}:${DB_PASSWORD}@mongo:27017/${DB_NAME}?authSource=admin
+networks:
+  network_cable:
+    driver: bridge

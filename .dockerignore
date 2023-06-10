@@ -1,0 +1,7 @@
+/.git/
+/node_modules/
+/dist/
+/data/
+
+# please set env variables in docker-compose.yml file
+.env 
