@@ -7,4 +7,6 @@ export class MenuItemDto {
   price: number;
   @ApiProperty({ example: 'Pizza de calabresa' })
   description: string;
+  @ApiProperty({ example: 2 })
+  quantity: number;
 }

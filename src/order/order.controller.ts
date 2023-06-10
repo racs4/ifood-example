@@ -38,10 +38,10 @@ export class OrderController {
   @Roles(UserRole.CUSTOMER)
   @Post()
   create(@Body() createOrderDto: CreateOrderDto, @Request() req) {
-    if (!req || !req.user) {
+    if (!req || !req.user || !req.user.user_id) {
       throw new NotFoundException('User not found');
     }
-    return this.orderService.create(createOrderDto, req.user);
+    return this.orderService.create(createOrderDto, req.user.user_id);
   }
 
   @ApiBearerAuth()
@@ -122,9 +122,9 @@ export class OrderController {
   })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.CUSTOMER)
-  @Post(':order-id/menu-item')
+  @Post(':order/menu-item')
   addItems(
-    @Param('order-id') orderId,
+    @Param('order') orderId: string,
     @Body() menuItems: MenuItemDto[],
     @Request() req,
   ) {
@@ -141,17 +141,17 @@ export class OrderController {
   })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.CUSTOMER)
-  @Patch(':order-id/menu-item/:id')
+  @Patch(':order/menu-item/:id')
   updateMenuItem(
-    @Param('order-id') orderId: string,
+    @Param('order') orderId: string,
     @Param('id') menuId: string,
-    @Body() newQuantity: number,
+    @Body() newQuantity: { new_quantity: number },
     @Request() req,
   ) {
     if (!req || !req.user || !req.user.user_id) {
       throw new NotFoundException('Customer not found');
     }
-    if (newQuantity <= 0) {
+    if (newQuantity.new_quantity <= 0) {
       throw new BadRequestException('Quantity must be greater than 0');
     }
 
@@ -159,7 +159,7 @@ export class OrderController {
       orderId,
       req.user.user_id,
       menuId,
-      newQuantity,
+      newQuantity.new_quantity,
     );
   }
 
@@ -168,15 +168,15 @@ export class OrderController {
     summary: 'Delete a menu item by id (the user is taken from token)',
   })
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.RESTAURANT)
-  @Delete(':order-id/menu-item/:id')
+  @Roles(UserRole.CUSTOMER)
+  @Delete(':order/menu-item/:id')
   deleteMenuItem(
-    @Param('order-id') orderId,
+    @Param('order') orderId: string,
     @Param('id') id: string,
     @Request() req,
   ) {
     if (!req || !req.user || !req.user.user_id) {
-      throw new NotFoundException('Restaurant not found');
+      throw new NotFoundException('Customer not found');
     }
     return this.orderService.removeItem(orderId, req.user.user_id, id);
   }

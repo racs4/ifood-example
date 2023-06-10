@@ -51,26 +51,18 @@ export class OrderService {
   }
 
   update(id: string, updateOrderDto: UpdateOrderDto, customerId: string) {
-    if (!this.isOrderPending(id)) {
-      throw new BadRequestException('Order is not pending');
-    }
-
     return this.orderModel
       .findOneAndUpdate({ _id: id, customerId }, updateOrderDto)
       .lean();
   }
 
   removeItem(orderId: string, customerId: string, itemId: string) {
-    if (!this.isOrderPending(orderId)) {
-      throw new BadRequestException('Order is not pending');
-    }
-
     return this.orderModel
       .updateOne(
         { _id: orderId, customerId },
         {
           $pull: {
-            menu: { _id: new Types.ObjectId(itemId) },
+            items: { _id: new Types.ObjectId(itemId) },
           },
         },
       )
@@ -83,10 +75,6 @@ export class OrderService {
     itemId: string,
     newQuantity: number,
   ) {
-    if (!this.isOrderPending(orderId)) {
-      throw new BadRequestException('Order is not pending');
-    }
-
     const res = await this.orderModel
       .findOne(
         {
@@ -105,7 +93,7 @@ export class OrderService {
     const updatedItem = { ...item.toObject(), quantity: newQuantity };
     return this.orderModel
       .updateOne(
-        { _id: orderId, customerId: customerId },
+        { _id: orderId, customerId: customerId, 'items._id': itemId },
         {
           $set: {
             'items.$': { ...updatedItem, _id: itemId },
@@ -116,63 +104,40 @@ export class OrderService {
   }
 
   addItems(orderId: string, customerId: string, menuItems: MenuItemDto[]) {
-    if (!this.isOrderPending(orderId)) {
-      throw new BadRequestException('Order is not pending');
-    }
-
     return this.orderModel
       .updateOne(
         { _id: orderId, customerId },
-        { $push: { menu: { $each: menuItems } } },
+        { $push: { items: { $each: menuItems } } },
       )
       .exec();
   }
 
   approve(orderId: string, restaurantId: string) {
-    if (!this.isOrderPending(orderId)) {
-      throw new BadRequestException('Order is not pending');
-    }
-
-    return this.orderModel.findOneAndUpdate(
+    return this.orderModel.updateOne(
       { _id: orderId, restaurantId },
       { status: OrderStatus.APPROVED },
     );
   }
 
   complete(orderId: string, restaurantId: string) {
-    if (!this.isOrderPending(orderId)) {
-      throw new BadRequestException('Order is not pending');
-    }
-
-    return this.orderModel.findOneAndUpdate(
+    return this.orderModel.updateOne(
       { _id: orderId, restaurantId },
       { status: OrderStatus.COMPLETED },
     );
   }
 
   cancel(orderId: string, user) {
-    if (!this.isOrderPending(orderId)) {
-      throw new BadRequestException('Order is not pending');
-    }
-
     if (user.role === UserRole.CUSTOMER) {
-      return this.orderModel.findOneAndUpdate(
+      return this.orderModel.updateOne(
         { _id: orderId, customerId: user.user_id },
         { status: OrderStatus.CANCELLED },
       );
     }
     if (user.role === UserRole.RESTAURANT) {
-      return this.orderModel.findOneAndUpdate(
+      return this.orderModel.updateOne(
         { _id: orderId, restaurantId: user.user_id },
         { status: OrderStatus.CANCELLED },
       );
     }
-  }
-
-  async isOrderPending(orderId: string): Promise<boolean> {
-    return (
-      (await this.orderModel.findById(orderId).lean()).status ===
-      OrderStatus.PENDING
-    );
   }
 }
