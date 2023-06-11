@@ -51,7 +51,7 @@ export class CustomerController {
         {
           ...createCustomerDto,
           role: UserRole.CUSTOMER,
-          user_id: res._id,
+          user_id: res.id,
         },
       ),
     );

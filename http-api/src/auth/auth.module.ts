@@ -17,8 +17,11 @@ import { JwtStrategy } from 'src/common/strategies/jwt.strategies';
     ClientsModule.register([
       {
         name: Services.AUTH,
-        transport: Transport.TCP,
-        options: { port: +process.env.AUTH_SERVICE_PORT || 3002 },
+        transport: Transport.REDIS,
+        options: {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: 6379,
+        },
       },
     ]),
   ],

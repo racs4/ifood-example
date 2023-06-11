@@ -1,11 +1,11 @@
-version: '3.9'
+version: "3.9"
 services:
   mongo:
     container_name: mongo
     ports:
-      - '27017:27017'
+      - "27017:27017"
     volumes:
-      - './data:/data/db'
+      - "./data:/data/db"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${DB_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD}
@@ -13,18 +13,104 @@ services:
     image: mongo:6.0.3 # latest available
     networks:
       - network_cable
-  application:
-    build: .
+  http-api:
+    build:
+      context: ./http-api/
     ports:
-      - '${PORT}:${PORT}'
+      - "${PORT}:${PORT}"
+    depends_on:
+      - mongo
+      - redis
+      - auth-service
+      - client-service
+      - order-service
+    networks:
+      - network_cable
+      - redis-net
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT}
+      - AUTH_SERVICE_PORT=${AUTH_SERVICE_PORT}
+      - CLIENT_SERVICE_PORT=${CLIENT_SERVICE_PORT}
+      - ORDER_SERVICE_PORT=${ORDER_SERVICE_PORT}
+      - REDIS_HOST=redis
+  auth-service:
+    build:
+      context: ./auth-service/
+    ports:
+      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
+    depends_on:
+      - mongo
+      - redis
     links:
       - mongo
     networks:
       - network_cable
+      - redis-net
     environment:
+      - REDIS_HOST=redis
       - JWT_SECRET=${JWT_SECRET}
-      - PORT=${PORT}
-      - DATABASE_URL=mongodb://${DB_USERNAME}:${DB_PASSWORD}@mongo:27017/${DB_NAME}?authSource=admin
+      - PORT=${AUTH_SERVICE_PORT}
+      - DB_URL=mongodb://${DB_USERNAME}:${DB_PASSWORD}@mongo:27017/${DB_NAME}?authSource=admin
+  client-service:
+    build:
+      context: ./client-service/
+    ports:
+      - "${CLIENT_SERVICE_PORT}:${CLIENT_SERVICE_PORT}"
+    depends_on:
+      - mongo
+      - redis
+    links:
+      - mongo
+    networks:
+      - network_cable
+      - redis-net
+    environment:
+      - REDIS_HOST=redis
+      - PORT=${CLIENT_SERVICE_PORT}
+      - DB_URL=mongodb://${DB_USERNAME}:${DB_PASSWORD}@mongo:27017/${DB_NAME}?authSource=admin
+  order-service:
+    build:
+      context: ./order-service/
+    ports:
+      - "${ORDER_SERVICE_PORT}:${ORDER_SERVICE_PORT}"
+    depends_on:
+      - mongo
+      - redis
+    links:
+      - mongo
+    networks:
+      - network_cable
+      - redis-net
+    environment:
+      - REDIS_HOST=redis
+      - PORT=${ORDER_SERVICE_PORT}
+      - DB_URL=mongodb://${DB_USERNAME}:${DB_PASSWORD}@mongo:27017/${DB_NAME}?authSource=admin
+  redis:
+    image: "redis:latest"
+    container_name: microservice-redis
+    restart: always
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - "REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL"
+    labels:
+      kompose.service.type: nodeport
+    command:
+      - redis-server
+      - "--bind"
+      - redis
+      - "--port"
+      - "6379"
+    volumes:
+      - "redis_data:/usr/local/etc/redis/redis.conf"
+    ports:
+      - "6379:6379"
+    networks:
+      - redis-net
 networks:
   network_cable:
     driver: bridge
+  redis-net: null
+volumes:
+  redis_data:
+    driver: local

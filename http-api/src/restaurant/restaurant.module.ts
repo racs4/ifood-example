@@ -8,13 +8,19 @@ import { RestaurantController } from './restaurant.controller';
     ClientsModule.register([
       {
         name: Services.CLIENT,
-        transport: Transport.TCP,
-        options: { port: +process.env.CUSTOMER_SERVICE_PORT || 3003 },
+        transport: Transport.REDIS,
+        options: {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: 6379,
+        },
       },
       {
         name: Services.AUTH,
-        transport: Transport.TCP,
-        options: { port: +process.env.AUTH_SERVICE_PORT || 3002 },
+        transport: Transport.REDIS,
+        options: {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: 6379,
+        },
       },
     ]),
   ],

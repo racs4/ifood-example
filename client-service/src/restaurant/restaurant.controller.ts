@@ -15,12 +15,13 @@ export class RestaurantController {
     return this.restaurantService.findOne(id);
   }
 
-  @MessagePattern({ cmd: 'find_one_restaurant' })
+  @MessagePattern({ cmd: 'create_restaurant' })
   async create(createRestaurantDto: CreateRestaurantDto) {
     const res = (
       await this.restaurantService.create(createRestaurantDto)
     ).toObject();
     return {
+      id: res._id,
       email: res.email,
       name: res.name,
       phone: res.phone,

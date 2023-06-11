@@ -46,13 +46,14 @@ export class RestaurantController {
         createRestaurantDto,
       ),
     );
+    console.log(res);
     await firstValueFrom(
       this.authService.send(
         { cmd: 'register' },
         {
           ...createRestaurantDto,
           role: UserRole.RESTAURANT,
-          user_id: res._id,
+          user_id: res.id,
         },
       ),
     );

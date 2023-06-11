@@ -21,6 +21,7 @@ export class CustomerController {
       await this.customerService.create(createCustomerDto)
     ).toObject();
     return {
+      id: res._id,
       email: res.email,
       name: res.name,
       phone: res.phone,
