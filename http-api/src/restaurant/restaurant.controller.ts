@@ -46,7 +46,6 @@ export class RestaurantController {
         createRestaurantDto,
       ),
     );
-    console.log(res);
     await firstValueFrom(
       this.authService.send(
         { cmd: 'register' },
